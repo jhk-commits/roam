@@ -19,6 +19,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProfile } from '../context/ProfileContext';
@@ -29,6 +30,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function OnboardingScreen({ onComplete }) {
   const flatListRef = useRef(null);
+  const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(0);
   const { addKid } = useProfile();
 
@@ -219,7 +221,7 @@ export default function OnboardingScreen({ onComplete }) {
       />
 
       {/* Page indicator dots */}
-      <View style={styles.dots}>
+      <View style={[styles.dots, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
         {pages.map((_, index) => (
           <View
             key={index}

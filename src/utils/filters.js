@@ -23,25 +23,29 @@ function isThisWeekend(date) {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
 
-  // Calculate this Saturday and Sunday
-  const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
-  const saturday = new Date(now);
-  saturday.setDate(now.getDate() + (dayOfWeek === 6 ? 0 : daysUntilSaturday));
-  saturday.setHours(0, 0, 0, 0);
+  // Find this Saturday and Sunday
+  let saturday, sunday;
 
-  const sunday = new Date(saturday);
-  sunday.setDate(saturday.getDate() + 1);
-  sunday.setHours(23, 59, 59, 999);
-
-  // If today is Saturday, include today and tomorrow
   if (dayOfWeek === 6) {
-    saturday.setDate(now.getDate());
+    // Today is Saturday
+    saturday = new Date(now);
+    sunday = new Date(now);
+    sunday.setDate(now.getDate() + 1);
+  } else if (dayOfWeek === 0) {
+    // Today is Sunday
+    saturday = new Date(now);
+    sunday = new Date(now);
+  } else {
+    // Weekday — find the upcoming Saturday
+    const daysUntilSaturday = 6 - dayOfWeek;
+    saturday = new Date(now);
+    saturday.setDate(now.getDate() + daysUntilSaturday);
+    sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
   }
-  // If today is Sunday, include just today
-  if (dayOfWeek === 0) {
-    saturday.setDate(now.getDate());
-    sunday.setDate(now.getDate());
-  }
+
+  saturday.setHours(0, 0, 0, 0);
+  sunday.setHours(23, 59, 59, 999);
 
   return date >= saturday && date <= sunday;
 }

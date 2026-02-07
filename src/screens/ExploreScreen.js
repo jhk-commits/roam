@@ -154,8 +154,8 @@ export default function ExploreScreen({ navigation }) {
         ))}
       </MapView>
 
-      {/* Filter bar — positioned between map and bottom sheet */}
-      <View style={styles.filterBarContainer}>
+      {/* Filter bar — positioned below safe area at top of screen */}
+      <View style={[styles.filterBarContainer, { top: insets.top }]}>
         <FilterBar filters={filters} onFilterChange={setFilters} />
       </View>
 
@@ -192,7 +192,6 @@ const styles = StyleSheet.create({
   },
   filterBarContainer: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
     zIndex: 10,

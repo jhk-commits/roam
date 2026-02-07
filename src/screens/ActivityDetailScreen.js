@@ -20,9 +20,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CategoryBadge from '../components/CategoryBadge';
 import AgeMatchBanner from '../components/AgeMatchBanner';
 import { useBookmarks } from '../context/BookmarkContext';
-import { CATEGORIES } from '../utils/constants';
+import { CATEGORIES, DEFAULT_LOCATION } from '../utils/constants';
 import { getDistance, formatDistance } from '../utils/distance';
-import { DEFAULT_LOCATION } from '../utils/constants';
 import colors from '../theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

@@ -125,7 +125,7 @@ const activities = [
     id: 'playland-park',
     name: 'Playland Park',
     type: 'attraction',
-    category: 'indoor_play',
+    category: 'sports',
     description:
       'A classic Art Deco amusement park on the Long Island Sound waterfront. Features rides for all ages, from gentle kiddie rides to the famous Dragon Coaster. Seasonal — check opening dates.',
     address: '1 Playland Pkwy, Rye, NY 10580',
@@ -135,7 +135,7 @@ const activities = [
     price: 'Varies by ride',
     isIndoor: false,
     isOutdoor: true,
-    imageColor: '#EAB308',
+    imageColor: '#F97316',
     source: 'Google',
     eventDate: null,
     eventEndDate: null,

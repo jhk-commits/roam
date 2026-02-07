@@ -96,7 +96,7 @@ export default function FilterBar({ filters, onFilterChange }) {
         {kidAges.map((age) => (
           <FilterChip
             key={`age-${age}`}
-            label={`Age ${age}+`}
+            label={`Age ${age}`}
             isActive={filters.age === age}
             onPress={() => handleAgePress(age)}
           />
