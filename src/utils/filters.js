@@ -1,0 +1,165 @@
+/**
+ * Filter logic for activities.
+ * Each filter function takes an array of activities and returns a filtered array.
+ * Filters compose cleanly — chain them together to apply multiple criteria.
+ */
+
+/**
+ * Check if a date falls on today.
+ */
+function isToday(date) {
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+/**
+ * Check if a date falls on this weekend (upcoming Saturday or Sunday).
+ */
+function isThisWeekend(date) {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+
+  // Calculate this Saturday and Sunday
+  const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+  const saturday = new Date(now);
+  saturday.setDate(now.getDate() + (dayOfWeek === 6 ? 0 : daysUntilSaturday));
+  saturday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(saturday);
+  sunday.setDate(saturday.getDate() + 1);
+  sunday.setHours(23, 59, 59, 999);
+
+  // If today is Saturday, include today and tomorrow
+  if (dayOfWeek === 6) {
+    saturday.setDate(now.getDate());
+  }
+  // If today is Sunday, include just today
+  if (dayOfWeek === 0) {
+    saturday.setDate(now.getDate());
+    sunday.setDate(now.getDate());
+  }
+
+  return date >= saturday && date <= sunday;
+}
+
+/**
+ * Check if a date falls within this week (today through end of Sunday).
+ */
+function isThisWeek(date) {
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const dayOfWeek = now.getDay();
+  const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
+  const endOfWeek = new Date(now);
+  endOfWeek.setDate(now.getDate() + daysUntilSunday);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  return date >= startOfToday && date <= endOfWeek;
+}
+
+/**
+ * Filter activities by time window.
+ * Attractions pass through all time filters (they're always available).
+ * Events are filtered by their event date.
+ * Recurring events pass through all filters.
+ *
+ * @param {Array} activities
+ * @param {string|null} whenFilter - "today", "this_weekend", "this_week", "any_time", or null
+ * @returns {Array}
+ */
+export function filterByWhen(activities, whenFilter) {
+  if (!whenFilter || whenFilter === 'any_time') return activities;
+
+  return activities.filter((activity) => {
+    // Attractions always show
+    if (activity.type === 'attraction') return true;
+
+    // Recurring events always show (they repeat regularly)
+    if (activity.isRecurring) return true;
+
+    if (!activity.eventDate) return true;
+
+    const eventDate = new Date(activity.eventDate);
+
+    switch (whenFilter) {
+      case 'today':
+        return isToday(eventDate);
+      case 'this_weekend':
+        return isThisWeekend(eventDate);
+      case 'this_week':
+        return isThisWeek(eventDate);
+      default:
+        return true;
+    }
+  });
+}
+
+/**
+ * Filter activities by category.
+ *
+ * @param {Array} activities
+ * @param {Array<string>} activeCategories - Array of category keys (e.g., ["arts", "nature"])
+ * @returns {Array}
+ */
+export function filterByCategory(activities, activeCategories) {
+  if (!activeCategories || activeCategories.length === 0) return activities;
+  return activities.filter((activity) =>
+    activeCategories.includes(activity.category)
+  );
+}
+
+/**
+ * Filter activities by age appropriateness.
+ * An activity matches if the given age falls within its age range.
+ * Activities with no age range (all ages) always match.
+ *
+ * @param {Array} activities
+ * @param {number|null} age - The child's age to filter by, or null to skip
+ * @returns {Array}
+ */
+export function filterByAge(activities, age) {
+  if (age === null || age === undefined) return activities;
+
+  return activities.filter((activity) => {
+    if (!activity.ageRange) return true; // "all ages"
+    return age >= activity.ageRange.min && age <= activity.ageRange.max;
+  });
+}
+
+/**
+ * Filter to show only free activities.
+ *
+ * @param {Array} activities
+ * @param {boolean} freeOnly
+ * @returns {Array}
+ */
+export function filterByFree(activities, freeOnly) {
+  if (!freeOnly) return activities;
+  return activities.filter((activity) => activity.isFree);
+}
+
+/**
+ * Apply all active filters to an array of activities.
+ *
+ * @param {Array} activities - Full list of activities
+ * @param {Object} filters - Active filter state
+ * @param {string|null} filters.when - Time filter
+ * @param {Array<string>} filters.categories - Active category keys
+ * @param {number|null} filters.age - Age to filter by
+ * @param {boolean} filters.freeOnly - Show only free activities
+ * @returns {Array}
+ */
+export function applyFilters(activities, filters) {
+  let result = activities;
+  result = filterByWhen(result, filters.when);
+  result = filterByCategory(result, filters.categories);
+  result = filterByAge(result, filters.age);
+  result = filterByFree(result, filters.freeOnly);
+  return result;
+}
