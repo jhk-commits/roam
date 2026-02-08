@@ -32,8 +32,9 @@ function isThisWeekend(date) {
     sunday = new Date(now);
     sunday.setDate(now.getDate() + 1);
   } else if (dayOfWeek === 0) {
-    // Today is Sunday
+    // Today is Sunday — include yesterday (Saturday) and today
     saturday = new Date(now);
+    saturday.setDate(now.getDate() - 1);
     sunday = new Date(now);
   } else {
     // Weekday — find the upcoming Saturday
