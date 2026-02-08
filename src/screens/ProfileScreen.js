@@ -16,8 +16,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProfile } from '../context/ProfileContext';
-import { RADIUS_OPTIONS } from '../utils/constants';
+import { RADIUS_OPTIONS, ONBOARDING_COMPLETE_KEY } from '../utils/constants';
 import colors from '../theme/colors';
 
 // Consistent colors for kid avatars
@@ -101,6 +102,23 @@ export default function ProfileScreen() {
       'Send Feedback',
       'Thanks for wanting to help! Feedback functionality will be available in a future update.',
       [{ text: 'OK' }]
+    );
+  };
+
+  const handleResetOnboarding = () => {
+    Alert.alert(
+      'Reset Onboarding',
+      'This will show the welcome screens again next time you open the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          onPress: async () => {
+            await AsyncStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+            Alert.alert('Done', 'Close and reopen the app to see the onboarding screens.');
+          },
+        },
+      ]
     );
   };
 
@@ -242,6 +260,12 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.aboutRow} onPress={handleFeedback}>
             <Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />
             <Text style={styles.aboutText}>Send Feedback</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.aboutRow} onPress={handleResetOnboarding}>
+            <Ionicons name="refresh-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.aboutText}>Reset Onboarding</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
