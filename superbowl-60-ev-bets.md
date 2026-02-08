@@ -140,15 +140,94 @@
 
 ---
 
+## Top 5 Bets: Cross-Book Odds Comparison
+
+### Bet 1: Under 45.5 Total Points
+
+| Sportsbook | Line | Odds | Notes |
+|------------|------|------|-------|
+| **Boomer's** | **45** | ~-110 | **Sharpest number** — already past 45.5 |
+| **Circa Sports** | **45** | ~-110 | Sharp book, lowest in market |
+| **SuperBook** | 45.5 | ~-110 | Settled here after opening 46.5 |
+| **DraftKings** | 45.5 | -110 | Available in CT |
+| **FanDuel** | 45.5 | ~-110 | Available in CT |
+| **BetMGM** | **46.5** | ~-110 | Highest in market — big over value here |
+| **Borgata** | 46 | ~-110 | Above consensus |
+
+**Best play:** Under 45.5 at DK/FD. Even better: Under 46.5 at BetMGM if still available.
+
+---
+
+### Bet 2: Patriots +4.5
+
+| Sportsbook | Spread | Juice | Notes |
+|------------|--------|-------|-------|
+| **BetMGM** | NE +4.5 | **-105** | **Best juice available** |
+| **Bet365** | NE +4.5 | **-105** | Tied for best |
+| **SuperBook** | NE +4.5 | **-105** | -105 both sides |
+| **Caesars** | NE +4.5 | -108 | Slightly worse |
+| **Circa Sports** | NE +4.5 | ~-110 | Sharp book, balanced action |
+| **DraftKings** | NE +4.5 | ~-105 | Available in CT (SEA side -115) |
+| **FanDuel** | NE +4.5 | ~-110 | Available in CT |
+| **Station** | NE +4.5 | ~-110 | Matches opener |
+| **Boomer's** | NE +4.5 | ~-110 | No movement since Jan 25 |
+
+**Best play:** NE +4.5 at BetMGM/Bet365/SuperBook at **-105**. In CT: DraftKings.
+
+---
+
+### Bet 3: Kenneth Walker III Receiving Yards OVER
+
+| Sportsbook | Line | Odds | Notes |
+|------------|------|------|-------|
+| **Pickswise** | O 19.5 | **-110** | **Lowest line found** |
+| **FanDuel** | O 20.5 | **-110** | **Best CT option — 2 yds below DK** |
+| **DraftKings** | O 21.5 | -114 | Higher line, worse juice |
+| **BetMGM** | ~O 21.5 | ~-110 | Combined rush+rec at 95.5 (-115) |
+| **Covers** | ~O 21.5 | ~-111 | Combined rush+rec at 99.5 (-111) |
+
+Walker has 29+ rec yds in 3 straight games (49 in NFCCG). Line is 20.5-22.5 across books.
+**Best play:** FanDuel O 20.5 (-110). If available, any book offering 19.5.
+
+---
+
+### Bet 4: Sam Darnold Under 0.5 Interceptions
+
+| Sportsbook | Line | Odds | Notes |
+|------------|------|------|-------|
+| **Pickswise/FanDuel** | U 0.5 INTs | **+110** | **Plus money — best price found** |
+| **BetMGM** | U 0.5 INTs | ~+100 to +105 | Described as "off market" (potentially softer) |
+| **DraftKings** | U 0.5 INTs | ~+100 | Standard juice |
+| **ESPN lines** | U 0.5 INTs | ~-104 | Steeper |
+
+Darnold: 0 INTs in last 2 playoff games, 0 INTs in 6 of last 10 regular season games (60%). NE only had 10 INTs all season.
+**Best play:** FanDuel at **+110**. Getting plus money on a ~59% prop is clear +EV.
+
+---
+
+### Bet 5: Hunter Henry Receiving Yards OVER
+
+| Sportsbook | Line | Odds | Notes |
+|------------|------|------|-------|
+| **Yahoo/Covers** | O 37.5 | **-115** | **Lowest line found** |
+| **FanDuel** | O 39.5 | **-110** | Available in CT |
+| **DraftKings** | O 39.5 | -113 | Available in CT, slightly worse juice |
+| **ESPN lines** | O 39.5 | -111 | Standard |
+
+Henry: 45+ rec yds in 5 of last 7 regular season games; 64 yds vs Chargers in Wild Card. SEA allows 6th-most yards to TEs. SEA safety Nick Emmanwori has a midweek ankle injury.
+**Best play:** If you can find O 37.5 (-115), take it. Otherwise FanDuel O 39.5 (-110) in CT.
+
+---
+
 ## Summary: Top 5 Bets to Place Right Now
 
-| # | Bet | Book | Odds | Edge |
-|---|-----|------|------|------|
-| 1 | **Under 45.5 Total** | DK or FD | -105 to -110 | Sharp books at 45; ~3-5% edge |
-| 2 | **Patriots +4.5** | BetMGM/SuperBook | -105 | Sharp money nearly even; public inflating SEA |
-| 3 | **K. Walker III O 20.5 rec yds** | FanDuel | -110 | Avg 39 rec yds/game in playoffs; Charbonnet OUT |
-| 4 | **Darnold U 0.5 INTs** | FanDuel | +110 | 59% hit rate at plus money |
-| 5 | **Hunter Henry O 39.5 rec yds** | DraftKings | -113 | SEA allows 64 yds/game to TEs |
+| # | Bet | Best Book | CT Book | Odds | Edge |
+|---|-----|-----------|---------|------|------|
+| 1 | **Under 45.5 Total** | BetMGM (U 46.5!) | DK/FD (U 45.5) | -110 | Sharp books at 45; 0.5-1.5 pt edge |
+| 2 | **Patriots +4.5** | BetMGM (-105) | DK (~-105) | -105 | Sharp $ nearly even; public inflating SEA |
+| 3 | **K. Walker III O rec yds** | Any at 19.5 | FD (O 20.5, -110) | -110 | 39 rec yds/gm in playoffs; Charbonnet OUT |
+| 4 | **Darnold U 0.5 INTs** | FD (+110) | FD (+110) | +110 | 59% hit rate at plus money |
+| 5 | **Hunter Henry O rec yds** | Yahoo (O 37.5) | FD (O 39.5, -110) | -110/-115 | SEA allows 64 yds/gm to TEs |
 
 ---
 
