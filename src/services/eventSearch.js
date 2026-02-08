@@ -108,16 +108,16 @@ function parseResponse(responseText) {
     description: item.description || '',
     address: item.address || '',
     coordinates: {
-      latitude: item.latitude || 41.0262,
-      longitude: item.longitude || -73.6282,
+      latitude: item.latitude ?? 41.0262,
+      longitude: item.longitude ?? -73.6282,
     },
-    ageRange: item.ageMin !== null && item.ageMax !== null
-      ? { min: item.ageMin || 0, max: item.ageMax || 12 }
+    ageRange: item.ageMin != null && item.ageMax != null
+      ? { min: item.ageMin ?? 0, max: item.ageMax ?? 12 }
       : null,
     isFree: item.isFree || false,
     price: item.price || null,
-    isIndoor: item.isIndoor !== undefined ? item.isIndoor : true,
-    isOutdoor: item.isOutdoor !== undefined ? item.isOutdoor : false,
+    isIndoor: item.isIndoor ?? true,
+    isOutdoor: item.isOutdoor ?? false,
     imageColor: getCategoryColor(item.category),
     source: item.source || 'Web Search',
     eventDate: item.eventDate || null,
@@ -170,6 +170,11 @@ export async function searchEvents({ kids = [], radius = 10 } = {}) {
   }
 
   const data = await response.json();
+
+  if (!data.content || !data.content[0] || !data.content[0].text) {
+    throw new Error('Unexpected API response format');
+  }
+
   const text = data.content[0].text;
 
   return parseResponse(text);

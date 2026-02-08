@@ -12,7 +12,6 @@ import {
   Animated,
   Alert,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,8 +22,6 @@ import { useBookmarks } from '../context/BookmarkContext';
 import { CATEGORIES, DEFAULT_LOCATION } from '../utils/constants';
 import { getDistance, formatDistance } from '../utils/distance';
 import colors from '../theme/colors';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 /**
  * Format the event date/time for the detail screen.

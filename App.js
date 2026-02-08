@@ -15,6 +15,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { BookmarkProvider } from './src/context/BookmarkContext';
 import { ProfileProvider } from './src/context/ProfileContext';
+import { LiveEventsProvider } from './src/context/LiveEventsContext';
 import { ONBOARDING_COMPLETE_KEY } from './src/utils/constants';
 import colors from './src/theme/colors';
 
@@ -56,14 +57,16 @@ export default function App() {
       <SafeAreaProvider>
         <ProfileProvider>
           <BookmarkProvider>
-            <StatusBar style="dark" />
-            {showOnboarding ? (
-              <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
-            ) : (
-              <NavigationContainer>
-                <AppNavigator />
-              </NavigationContainer>
-            )}
+            <LiveEventsProvider>
+              <StatusBar style="dark" />
+              {showOnboarding ? (
+                <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+              ) : (
+                <NavigationContainer>
+                  <AppNavigator />
+                </NavigationContainer>
+              )}
+            </LiveEventsProvider>
           </BookmarkProvider>
         </ProfileProvider>
       </SafeAreaProvider>

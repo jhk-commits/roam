@@ -31,6 +31,7 @@ import { DEFAULT_LOCATION, CATEGORIES } from '../utils/constants';
 import { getDistance } from '../utils/distance';
 import { applyFilters } from '../utils/filters';
 import { useProfile } from '../context/ProfileContext';
+import { useLiveEvents } from '../context/LiveEventsContext';
 import { searchEvents } from '../services/eventSearch';
 import colors from '../theme/colors';
 
@@ -45,6 +46,7 @@ export default function ExploreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
   const { kids, preferences } = useProfile();
+  const { liveEvents, updateLiveEvents } = useLiveEvents();
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -55,9 +57,8 @@ export default function ExploreScreen({ navigation }) {
   });
 
   // Live event search state
-  const [liveEvents, setLiveEvents] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const hasSearched = liveEvents.length > 0;
 
   // Bottom sheet animation value (represents the height of the sheet)
   const sheetHeight = useRef(new Animated.Value(SNAP_COLLAPSED)).current;
@@ -131,8 +132,8 @@ export default function ExploreScreen({ navigation }) {
 
   // Combine mock data with live events, add distance, and sort
   const allActivities = useMemo(() => {
-    return hasSearched ? [...mockActivities, ...liveEvents] : mockActivities;
-  }, [liveEvents, hasSearched]);
+    return liveEvents.length > 0 ? [...mockActivities, ...liveEvents] : mockActivities;
+  }, [liveEvents]);
 
   const activitiesWithDistance = useMemo(() => {
     return allActivities
@@ -156,8 +157,7 @@ export default function ExploreScreen({ navigation }) {
         kids,
         radius: preferences.searchRadius,
       });
-      setLiveEvents(results);
-      setHasSearched(true);
+      updateLiveEvents(results);
       snapTo(SNAP_HALF);
     } catch (error) {
       Alert.alert(
@@ -169,7 +169,7 @@ export default function ExploreScreen({ navigation }) {
     } finally {
       setIsSearching(false);
     }
-  }, [kids, preferences.searchRadius, snapTo]);
+  }, [kids, preferences.searchRadius, snapTo, updateLiveEvents]);
 
   // Apply filters
   const filteredActivities = useMemo(() => {

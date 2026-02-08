@@ -16,7 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ActivityCard from '../components/ActivityCard';
 import EmptyState from '../components/EmptyState';
 import { useBookmarks } from '../context/BookmarkContext';
-import activities from '../data/mockData';
+import { useLiveEvents } from '../context/LiveEventsContext';
+import mockActivities from '../data/mockData';
 import { getDistance } from '../utils/distance';
 import { DEFAULT_LOCATION } from '../utils/constants';
 import colors from '../theme/colors';
@@ -24,11 +25,17 @@ import colors from '../theme/colors';
 export default function SavedScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { bookmarkedIds, removeBookmark } = useBookmarks();
+  const { liveEvents } = useLiveEvents();
   const [activeTab, setActiveTab] = useState('events'); // 'events' or 'places'
+
+  // Combine mock + live activities, then filter to bookmarked ones
+  const allActivities = useMemo(() => {
+    return [...mockActivities, ...liveEvents];
+  }, [liveEvents]);
 
   // Get full activity objects for bookmarked IDs, with distance
   const bookmarkedActivities = useMemo(() => {
-    return activities
+    return allActivities
       .filter((a) => bookmarkedIds.includes(a.id))
       .map((a) => ({
         ...a,
@@ -39,7 +46,7 @@ export default function SavedScreen({ navigation }) {
           a.coordinates.longitude
         ),
       }));
-  }, [bookmarkedIds]);
+  }, [bookmarkedIds, allActivities]);
 
   // Split into events and attractions
   const events = useMemo(() => {
