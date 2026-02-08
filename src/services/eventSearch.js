@@ -11,7 +11,7 @@ const API_URL = 'https://api.anthropic.com/v1/messages';
 /**
  * Build the search prompt based on user location and kid profiles.
  */
-function buildPrompt(location, kids, radius) {
+function buildPrompt(location, kids, radius, timePeriod) {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -20,9 +20,14 @@ function buildPrompt(location, kids, radius) {
     day: 'numeric',
   });
 
-  // Build the next 7 days range
+  // Time period determines how far ahead to search
+  const daysAhead = timePeriod === 'weekend' ? 7
+    : timePeriod === 'week' ? 7
+    : timePeriod === 'month' ? 30
+    : 14; // default "2weeks"
+
   const endDate = new Date(today);
-  endDate.setDate(today.getDate() + 14);
+  endDate.setDate(today.getDate() + daysAhead);
   const endDateStr = endDate.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -72,7 +77,8 @@ Return ONLY a JSON array (no markdown, no explanation) where each item has this 
   "isRecurring": true or false,
   "recurringDescription": "Every Saturday" or null,
   "hours": "9:00 AM - 5:00 PM" or null for events,
-  "source": "Website name where you found this"
+  "source": "Website name where you found this",
+  "sourceUrl": "https://example.com/event-page" or null
 }
 
 Return ONLY the JSON array. No other text.`;
@@ -141,6 +147,7 @@ function parseResponse(responseText) {
     isOutdoor: item.isOutdoor ?? false,
     imageColor: getCategoryColor(item.category),
     source: item.source || 'Web Search',
+    sourceUrl: item.sourceUrl || null,
     eventDate: item.eventDate || null,
     eventEndDate: item.eventEndDate || null,
     isRecurring: item.isRecurring || false,
@@ -156,14 +163,15 @@ function parseResponse(responseText) {
  * @param {Object} options
  * @param {Array} options.kids - Kid profiles [{ name, age }]
  * @param {number} options.radius - Search radius in miles
+ * @param {string} options.timePeriod - "weekend", "week", "2weeks", or "month"
  * @returns {Promise<Array>} Array of activity objects
  */
-export async function searchEvents({ kids = [], radius = 10 } = {}) {
+export async function searchEvents({ kids = [], radius = 10, timePeriod = '2weeks' } = {}) {
   if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'your-api-key-here') {
     throw new Error('API key not configured. See src/config/apiKeys.example.js');
   }
 
-  const prompt = buildPrompt(null, kids, radius);
+  const prompt = buildPrompt(null, kids, radius, timePeriod);
 
   const response = await fetch(API_URL, {
     method: 'POST',

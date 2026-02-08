@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  Linking,
   StyleSheet,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -251,7 +252,15 @@ export default function ActivityDetailScreen({ route, navigation }) {
 
           {/* Source attribution */}
           {activity.source && (
-            <Text style={styles.source}>Listing via {activity.source}</Text>
+            <TouchableOpacity
+              disabled={!activity.sourceUrl}
+              onPress={() => activity.sourceUrl && Linking.openURL(activity.sourceUrl)}
+            >
+              <Text style={[styles.source, activity.sourceUrl && styles.sourceLink]}>
+                Listing via {activity.source}
+                {activity.sourceUrl ? ' →' : ''}
+              </Text>
+            </TouchableOpacity>
           )}
 
           {/* Bottom spacing */}
@@ -416,5 +425,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 24,
     textAlign: 'center',
+  },
+  sourceLink: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
   },
 });

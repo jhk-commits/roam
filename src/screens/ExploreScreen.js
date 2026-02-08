@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,6 +43,26 @@ const SNAP_COLLAPSED = SCREEN_HEIGHT * 0.30;
 const SNAP_HALF = SCREEN_HEIGHT * 0.55;
 const SNAP_EXPANDED = SCREEN_HEIGHT * 0.88;
 
+const TYPE_OPTIONS = [
+  { key: null, label: 'All' },
+  { key: 'event', label: 'Happening Soon' },
+  { key: 'attraction', label: 'Always Open' },
+];
+
+const TIME_PERIODS = [
+  { key: 'weekend', label: 'This Weekend' },
+  { key: 'week', label: 'This Week' },
+  { key: '2weeks', label: 'Next 2 Weeks' },
+  { key: 'month', label: 'This Month' },
+];
+
+const DISTANCE_OPTIONS = [
+  { key: 5, label: '5 mi' },
+  { key: 10, label: '10 mi' },
+  { key: 25, label: '25 mi' },
+  { key: 40, label: '40 mi' },
+];
+
 export default function ExploreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
@@ -56,6 +77,11 @@ export default function ExploreScreen({ navigation }) {
     age: null,
     freeOnly: false,
   });
+
+  // Search settings state
+  const [timePeriod, setTimePeriod] = useState('2weeks');
+  const [searchRadius, setSearchRadius] = useState(preferences.searchRadius || 10);
+  const [showSearchSettings, setShowSearchSettings] = useState(false);
 
   // Live event search state
   const [isSearching, setIsSearching] = useState(false);
@@ -102,7 +128,6 @@ export default function ExploreScreen({ navigation }) {
       onMoveShouldSetPanResponder: (_, gestureState) =>
         Math.abs(gestureState.dy) > 5,
       onPanResponderMove: (_, gestureState) => {
-        // Dragging up (negative dy) should increase height
         const newHeight = lastSnap.current - gestureState.dy;
         const clamped = Math.max(
           SNAP_COLLAPSED * 0.8,
@@ -112,20 +137,15 @@ export default function ExploreScreen({ navigation }) {
       },
       onPanResponderRelease: (_, gestureState) => {
         const currentHeight = lastSnap.current - gestureState.dy;
-        // Fast flick up → go to next snap up
         if (gestureState.vy < -0.5) {
           const nextUp =
             lastSnap.current < SNAP_HALF ? SNAP_HALF : SNAP_EXPANDED;
           snapTo(nextUp);
-        }
-        // Fast flick down → go to next snap down
-        else if (gestureState.vy > 0.5) {
+        } else if (gestureState.vy > 0.5) {
           const nextDown =
             lastSnap.current > SNAP_HALF ? SNAP_HALF : SNAP_COLLAPSED;
           snapTo(nextDown);
-        }
-        // Otherwise snap to closest
-        else {
+        } else {
           snapTo(getClosestSnap(currentHeight));
         }
       },
@@ -156,17 +176,16 @@ export default function ExploreScreen({ navigation }) {
     setIsSearching(true);
     setSearchStatus('Searching local events and activities...');
     try {
-      // Brief delay so user sees the status
       await new Promise((r) => setTimeout(r, 300));
       setSearchStatus('Checking libraries, museums, and parks...');
       const results = await searchEvents({
         kids,
-        radius: preferences.searchRadius,
+        radius: searchRadius,
+        timePeriod,
       });
       setSearchStatus(`Found ${results.length} activities!`);
       updateLiveEvents(results);
       snapTo(SNAP_HALF);
-      // Clear status after a moment
       setTimeout(() => setSearchStatus(''), 2000);
     } catch (error) {
       setSearchStatus('');
@@ -179,14 +198,14 @@ export default function ExploreScreen({ navigation }) {
     } finally {
       setIsSearching(false);
     }
-  }, [kids, preferences.searchRadius, snapTo, updateLiveEvents]);
+  }, [kids, searchRadius, timePeriod, snapTo, updateLiveEvents]);
 
   // Apply filters
   const filteredActivities = useMemo(() => {
     return applyFilters(activitiesWithDistance, filters);
   }, [activitiesWithDistance, filters]);
 
-  // Handle marker press — expand the bottom sheet
+  // Handle marker press
   const handleMarkerPress = useCallback(() => {
     snapTo(SNAP_HALF);
   }, [snapTo]);
@@ -199,7 +218,6 @@ export default function ExploreScreen({ navigation }) {
     [navigation]
   );
 
-  // Render an activity card in the list
   const renderItem = useCallback(
     ({ item }) => (
       <ActivityCard
@@ -219,6 +237,9 @@ export default function ExploreScreen({ navigation }) {
     filters.categories.length > 0 ||
     filters.age !== null ||
     filters.freeOnly;
+
+  const currentTimePeriod = TIME_PERIODS.find((t) => t.key === timePeriod);
+  const currentDistance = DISTANCE_OPTIONS.find((d) => d.key === searchRadius);
 
   return (
     <View style={styles.container}>
@@ -258,7 +279,7 @@ export default function ExploreScreen({ navigation }) {
         ))}
       </MapView>
 
-      {/* Filter bar — positioned below safe area at top of screen */}
+      {/* Filter bar */}
       <View style={[styles.filterBarContainer, { top: insets.top }]}>
         <FilterBar filters={filters} onFilterChange={setFilters} />
       </View>
@@ -270,13 +291,42 @@ export default function ExploreScreen({ navigation }) {
           <View style={styles.handle} />
         </View>
 
-        {/* List header with search button */}
-        <View style={styles.listHeader}>
-          <Text style={styles.listCount}>
-            {filteredActivities.length}{' '}
-            {filteredActivities.length === 1 ? 'activity' : 'activities'} nearby
-            {hasFilters ? ' (filtered)' : ''}
-          </Text>
+        {/* Type segmented control */}
+        <View style={styles.segmentedContainer}>
+          {TYPE_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.key || 'all'}
+              style={[
+                styles.segmentedButton,
+                filters.type === opt.key && styles.segmentedButtonActive,
+              ]}
+              onPress={() => setFilters({ ...filters, type: opt.key })}
+            >
+              <Text
+                style={[
+                  styles.segmentedText,
+                  filters.type === opt.key && styles.segmentedTextActive,
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Search row: settings + button */}
+        <View style={styles.searchRow}>
+          <TouchableOpacity
+            style={styles.settingsPill}
+            onPress={() => setShowSearchSettings(true)}
+          >
+            <Ionicons name="options-outline" size={14} color={colors.textSecondary} />
+            <Text style={styles.settingsPillText}>
+              {currentTimePeriod?.label} · {currentDistance?.label}
+            </Text>
+            <Ionicons name="chevron-down" size={12} color={colors.textSecondary} />
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.searchButton, isSearching && styles.searchButtonSearching]}
             onPress={handleSearchEvents}
@@ -286,7 +336,7 @@ export default function ExploreScreen({ navigation }) {
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <>
-                <Ionicons name="sparkles" size={16} color={colors.white} />
+                <Ionicons name="sparkles" size={14} color={colors.white} />
                 <Text style={styles.searchButtonText}>Find Things To Do</Text>
               </>
             )}
@@ -301,7 +351,15 @@ export default function ExploreScreen({ navigation }) {
             )}
             <Text style={styles.statusText}>{searchStatus}</Text>
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.countRow}>
+            <Text style={styles.listCount}>
+              {filteredActivities.length}{' '}
+              {filteredActivities.length === 1 ? 'activity' : 'activities'} nearby
+              {hasFilters ? ' (filtered)' : ''}
+            </Text>
+          </View>
+        )}
 
         {/* Activity list */}
         {filteredActivities.length === 0 ? (
@@ -331,6 +389,77 @@ export default function ExploreScreen({ navigation }) {
           />
         )}
       </Animated.View>
+
+      {/* Search settings modal */}
+      <Modal
+        visible={showSearchSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSearchSettings(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSearchSettings(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Search Settings</Text>
+
+            <Text style={styles.modalLabel}>Time Period</Text>
+            <View style={styles.optionRow}>
+              {TIME_PERIODS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[
+                    styles.optionChip,
+                    timePeriod === opt.key && styles.optionChipActive,
+                  ]}
+                  onPress={() => setTimePeriod(opt.key)}
+                >
+                  <Text
+                    style={[
+                      styles.optionChipText,
+                      timePeriod === opt.key && styles.optionChipTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Distance</Text>
+            <View style={styles.optionRow}>
+              {DISTANCE_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[
+                    styles.optionChip,
+                    searchRadius === opt.key && styles.optionChipActive,
+                  ]}
+                  onPress={() => setSearchRadius(opt.key)}
+                >
+                  <Text
+                    style={[
+                      styles.optionChipText,
+                      searchRadius === opt.key && styles.optionChipTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalDone}
+              onPress={() => setShowSearchSettings(false)}
+            >
+              <Text style={styles.modalDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -387,7 +516,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
   },
-  // Custom bottom sheet styles
+  // Bottom sheet
   sheet: {
     position: 'absolute',
     bottom: 0,
@@ -412,17 +541,63 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.border,
   },
-  listHeader: {
+  // Segmented control for type
+  segmentedContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    backgroundColor: colors.filterInactive,
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 10,
+  },
+  segmentedButton: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  segmentedButtonActive: {
+    backgroundColor: colors.white,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentedText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  segmentedTextActive: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  // Search row
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    marginBottom: 6,
+    gap: 8,
   },
-  listCount: {
-    fontSize: 14,
-    fontWeight: '600',
+  settingsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 4,
+    flex: 1,
+  },
+  settingsPillText: {
+    fontSize: 12,
     color: colors.textSecondary,
+    fontWeight: '500',
+    flex: 1,
   },
   searchButton: {
     flexDirection: 'row',
@@ -431,9 +606,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    gap: 6,
-    minWidth: 110,
-    justifyContent: 'center',
+    gap: 5,
   },
   searchButtonSearching: {
     backgroundColor: colors.textSecondary,
@@ -455,10 +628,83 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
   },
+  countRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 4,
+  },
+  listCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
   list: {
     flex: 1,
   },
   listContent: {
     paddingBottom: 100,
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 24,
+    marginHorizontal: 24,
+    width: '85%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  optionChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.filterInactive,
+  },
+  optionChipActive: {
+    backgroundColor: colors.primary,
+  },
+  optionChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  optionChipTextActive: {
+    color: colors.white,
+  },
+  modalDone: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  modalDoneText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
 });

@@ -15,19 +15,10 @@ export default function FilterBar({ filters, onFilterChange }) {
   const { kids } = useProfile();
 
   const hasActiveFilters =
-    filters.type ||
     filters.when ||
     filters.categories.length > 0 ||
     filters.age !== null ||
     filters.freeOnly;
-
-  // Toggle type filter (events vs places, one at a time)
-  const handleTypePress = (type) => {
-    onFilterChange({
-      ...filters,
-      type: filters.type === type ? null : type,
-    });
-  };
 
   // Toggle a "when" filter (only one active at a time)
   const handleWhenPress = (key) => {
@@ -61,7 +52,7 @@ export default function FilterBar({ filters, onFilterChange }) {
 
   // Clear all filters
   const handleClear = () => {
-    onFilterChange({ type: null, when: null, categories: [], age: null, freeOnly: false });
+    onFilterChange({ ...filters, when: null, categories: [], age: null, freeOnly: false });
   };
 
   // Build unique ages from kid profiles
@@ -74,21 +65,6 @@ export default function FilterBar({ filters, onFilterChange }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Type filters — events vs places */}
-        <FilterChip
-          label="Events"
-          isActive={filters.type === 'event'}
-          onPress={() => handleTypePress('event')}
-        />
-        <FilterChip
-          label="Places"
-          isActive={filters.type === 'attraction'}
-          onPress={() => handleTypePress('attraction')}
-        />
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
         {/* When filters */}
         {WHEN_FILTERS.map((filter) => (
           <FilterChip
