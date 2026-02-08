@@ -15,17 +15,23 @@ import {
   Dimensions,
   Animated,
   PanResponder,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import ActivityCard from '../components/ActivityCard';
 import FilterBar from '../components/FilterBar';
 import MapMarker from '../components/MapMarker';
 import EmptyState from '../components/EmptyState';
-import activities from '../data/mockData';
+import mockActivities from '../data/mockData';
 import { DEFAULT_LOCATION, CATEGORIES } from '../utils/constants';
 import { getDistance } from '../utils/distance';
 import { applyFilters } from '../utils/filters';
+import { useProfile } from '../context/ProfileContext';
+import { searchEvents } from '../services/eventSearch';
 import colors from '../theme/colors';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -38,6 +44,7 @@ const SNAP_EXPANDED = SCREEN_HEIGHT * 0.88;
 export default function ExploreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
+  const { kids, preferences } = useProfile();
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -46,6 +53,11 @@ export default function ExploreScreen({ navigation }) {
     age: null,
     freeOnly: false,
   });
+
+  // Live event search state
+  const [liveEvents, setLiveEvents] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Bottom sheet animation value (represents the height of the sheet)
   const sheetHeight = useRef(new Animated.Value(SNAP_COLLAPSED)).current;
@@ -117,9 +129,13 @@ export default function ExploreScreen({ navigation }) {
     })
   ).current;
 
-  // Add distance to each activity and sort by distance
+  // Combine mock data with live events, add distance, and sort
+  const allActivities = useMemo(() => {
+    return hasSearched ? [...mockActivities, ...liveEvents] : mockActivities;
+  }, [liveEvents, hasSearched]);
+
   const activitiesWithDistance = useMemo(() => {
-    return activities
+    return allActivities
       .map((activity) => ({
         ...activity,
         distance: getDistance(
@@ -130,7 +146,30 @@ export default function ExploreScreen({ navigation }) {
         ),
       }))
       .sort((a, b) => a.distance - b.distance);
-  }, []);
+  }, [allActivities]);
+
+  // Handle live event search
+  const handleSearchEvents = useCallback(async () => {
+    setIsSearching(true);
+    try {
+      const results = await searchEvents({
+        kids,
+        radius: preferences.searchRadius,
+      });
+      setLiveEvents(results);
+      setHasSearched(true);
+      snapTo(SNAP_HALF);
+    } catch (error) {
+      Alert.alert(
+        'Search Failed',
+        error.message.includes('API key')
+          ? 'API key not configured. Add your key in src/config/apiKeys.js'
+          : 'Could not fetch events. Check your internet connection and try again.'
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  }, [kids, preferences.searchRadius, snapTo]);
 
   // Apply filters
   const filteredActivities = useMemo(() => {
@@ -220,13 +259,29 @@ export default function ExploreScreen({ navigation }) {
           <View style={styles.handle} />
         </View>
 
-        {/* List header */}
+        {/* List header with search button */}
         <View style={styles.listHeader}>
           <Text style={styles.listCount}>
             {filteredActivities.length}{' '}
             {filteredActivities.length === 1 ? 'activity' : 'activities'} nearby
             {hasFilters ? ' (filtered)' : ''}
           </Text>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={handleSearchEvents}
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <>
+                <Ionicons name="sparkles" size={16} color={colors.white} />
+                <Text style={styles.searchButtonText}>
+                  {hasSearched ? 'Refresh' : 'Find Events'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Activity list */}
@@ -337,6 +392,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
@@ -344,6 +402,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
+  },
+  searchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    minWidth: 110,
+    justifyContent: 'center',
+  },
+  searchButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.white,
   },
   listContent: {
     paddingBottom: 100,

@@ -14,6 +14,9 @@ android/
 .env
 .env.local
 
+# API keys (uncomment below if you have a real key you don't want to commit)
+# src/config/apiKeys.js
+
 # OS files
 .DS_Store
 Thumbs.db
