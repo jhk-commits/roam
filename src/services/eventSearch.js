@@ -106,8 +106,12 @@ function parseResponse(responseText) {
     // Find the last complete object (ending with "}") and close the array
     const lastCompleteObj = jsonStr.lastIndexOf('}');
     if (lastCompleteObj > 0) {
-      const recovered = jsonStr.substring(0, lastCompleteObj + 1) + ']';
-      items = JSON.parse(recovered);
+      try {
+        const recovered = jsonStr.substring(0, lastCompleteObj + 1) + ']';
+        items = JSON.parse(recovered);
+      } catch {
+        throw new Error('Could not parse event data from API response');
+      }
     } else {
       throw new Error('Could not parse event data from API response');
     }

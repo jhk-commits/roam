@@ -302,6 +302,7 @@ export default function ExploreScreen({ navigation }) {
           />
         ) : (
           <FlatList
+            style={styles.list}
             data={filteredActivities}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
@@ -418,6 +419,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.white,
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     paddingBottom: 100,
