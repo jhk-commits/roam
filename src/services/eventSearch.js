@@ -98,7 +98,24 @@ function parseResponse(responseText) {
     jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   }
 
-  const items = JSON.parse(jsonStr);
+  let items;
+  try {
+    items = JSON.parse(jsonStr);
+  } catch (e) {
+    // Response may have been truncated — try to recover complete items
+    // Find the last complete object (ending with "}") and close the array
+    const lastCompleteObj = jsonStr.lastIndexOf('}');
+    if (lastCompleteObj > 0) {
+      const recovered = jsonStr.substring(0, lastCompleteObj + 1) + ']';
+      items = JSON.parse(recovered);
+    } else {
+      throw new Error('Could not parse event data from API response');
+    }
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('No events found in API response');
+  }
 
   return items.map((item, index) => ({
     id: `live-${index}-${Date.now()}`,
@@ -154,7 +171,7 @@ export async function searchEvents({ kids = [], radius = 10 } = {}) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [
         {
           role: 'user',
@@ -173,6 +190,10 @@ export async function searchEvents({ kids = [], radius = 10 } = {}) {
 
   if (!data.content || !data.content[0] || !data.content[0].text) {
     throw new Error('Unexpected API response format');
+  }
+
+  if (data.stop_reason === 'max_tokens') {
+    console.warn('Event search response was truncated — some results may be missing');
   }
 
   const text = data.content[0].text;
