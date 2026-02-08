@@ -19,7 +19,10 @@
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF"
       },
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "plugins": [
       [
@@ -27,7 +30,8 @@
         {
           "locationWhenInUsePermission": "Roam uses your location to show activities near you."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }
