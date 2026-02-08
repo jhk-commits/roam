@@ -1,12 +1,22 @@
 /**
  * ExploreScreen — the main map view with filter bar and draggable bottom sheet.
  * This is the home screen of the app.
+ *
+ * Uses a custom bottom sheet built with React Native's Animated API and
+ * PanResponder to avoid compatibility issues with third-party libraries.
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
-import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ActivityCard from '../components/ActivityCard';
 import FilterBar from '../components/FilterBar';
@@ -20,10 +30,14 @@ import colors from '../theme/colors';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Bottom sheet snap points (height of the sheet from the bottom)
+const SNAP_COLLAPSED = SCREEN_HEIGHT * 0.30;
+const SNAP_HALF = SCREEN_HEIGHT * 0.55;
+const SNAP_EXPANDED = SCREEN_HEIGHT * 0.88;
+
 export default function ExploreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
-  const bottomSheetRef = useRef(null);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -32,6 +46,76 @@ export default function ExploreScreen({ navigation }) {
     age: null,
     freeOnly: false,
   });
+
+  // Bottom sheet animation value (represents the height of the sheet)
+  const sheetHeight = useRef(new Animated.Value(SNAP_COLLAPSED)).current;
+  const lastSnap = useRef(SNAP_COLLAPSED);
+
+  // Snap the sheet to a given height with a spring animation
+  const snapTo = useCallback(
+    (toValue) => {
+      lastSnap.current = toValue;
+      Animated.spring(sheetHeight, {
+        toValue,
+        useNativeDriver: false,
+        tension: 60,
+        friction: 12,
+      }).start();
+    },
+    [sheetHeight]
+  );
+
+  // Find the closest snap point to a given value
+  const getClosestSnap = useCallback((value) => {
+    const snaps = [SNAP_COLLAPSED, SNAP_HALF, SNAP_EXPANDED];
+    let closest = snaps[0];
+    let minDist = Math.abs(value - snaps[0]);
+    for (let i = 1; i < snaps.length; i++) {
+      const dist = Math.abs(value - snaps[i]);
+      if (dist < minDist) {
+        closest = snaps[i];
+        minDist = dist;
+      }
+    }
+    return closest;
+  }, []);
+
+  // Pan responder for dragging the bottom sheet handle
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 5,
+      onPanResponderMove: (_, gestureState) => {
+        // Dragging up (negative dy) should increase height
+        const newHeight = lastSnap.current - gestureState.dy;
+        const clamped = Math.max(
+          SNAP_COLLAPSED * 0.8,
+          Math.min(SNAP_EXPANDED, newHeight)
+        );
+        sheetHeight.setValue(clamped);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const currentHeight = lastSnap.current - gestureState.dy;
+        // Fast flick up → go to next snap up
+        if (gestureState.vy < -0.5) {
+          const nextUp =
+            lastSnap.current < SNAP_HALF ? SNAP_HALF : SNAP_EXPANDED;
+          snapTo(nextUp);
+        }
+        // Fast flick down → go to next snap down
+        else if (gestureState.vy > 0.5) {
+          const nextDown =
+            lastSnap.current > SNAP_HALF ? SNAP_HALF : SNAP_COLLAPSED;
+          snapTo(nextDown);
+        }
+        // Otherwise snap to closest
+        else {
+          snapTo(getClosestSnap(currentHeight));
+        }
+      },
+    })
+  ).current;
 
   // Add distance to each activity and sort by distance
   const activitiesWithDistance = useMemo(() => {
@@ -53,17 +137,10 @@ export default function ExploreScreen({ navigation }) {
     return applyFilters(activitiesWithDistance, filters);
   }, [activitiesWithDistance, filters]);
 
-  // Bottom sheet snap points
-  const snapPoints = useMemo(() => {
-    // Collapsed shows ~2 cards, half screen, nearly full
-    const collapsed = Math.min(220, SCREEN_HEIGHT * 0.25);
-    return [collapsed, '50%', '90%'];
-  }, []);
-
-  // Handle marker press — expand the bottom sheet and scroll to the activity
-  const handleMarkerPress = useCallback((activity) => {
-    bottomSheetRef.current?.snapToIndex(1);
-  }, []);
+  // Handle marker press — expand the bottom sheet
+  const handleMarkerPress = useCallback(() => {
+    snapTo(SNAP_HALF);
+  }, [snapTo]);
 
   // Navigate to activity detail
   const handleActivityPress = useCallback(
@@ -73,7 +150,7 @@ export default function ExploreScreen({ navigation }) {
     [navigation]
   );
 
-  // Render an activity card in the bottom sheet list
+  // Render an activity card in the list
   const renderItem = useCallback(
     ({ item }) => (
       <ActivityCard
@@ -87,34 +164,11 @@ export default function ExploreScreen({ navigation }) {
 
   const keyExtractor = useCallback((item) => item.id, []);
 
-  // List header showing count
-  const ListHeader = useCallback(() => {
-    const hasFilters = filters.when || filters.categories.length > 0 || filters.age !== null || filters.freeOnly;
-    return (
-      <View style={styles.listHeader}>
-        <Text style={styles.listCount}>
-          {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'} nearby
-          {hasFilters ? ' (filtered)' : ''}
-        </Text>
-      </View>
-    );
-  }, [filteredActivities.length, filters]);
-
-  // List empty component
-  const ListEmpty = useCallback(
-    () => (
-      <EmptyState
-        icon="search-outline"
-        title="No activities found"
-        subtitle="Try adjusting your filters to see more results."
-        buttonLabel="Clear Filters"
-        onButtonPress={() =>
-          setFilters({ when: null, categories: [], age: null, freeOnly: false })
-        }
-      />
-    ),
-    []
-  );
+  const hasFilters =
+    filters.when ||
+    filters.categories.length > 0 ||
+    filters.age !== null ||
+    filters.freeOnly;
 
   return (
     <View style={styles.container}>
@@ -131,7 +185,7 @@ export default function ExploreScreen({ navigation }) {
           <Marker
             key={activity.id}
             coordinate={activity.coordinates}
-            onPress={() => handleMarkerPress(activity)}
+            onPress={handleMarkerPress}
           >
             <MapMarker category={activity.category} />
             <Callout tooltip onPress={() => handleActivityPress(activity)}>
@@ -159,25 +213,48 @@ export default function ExploreScreen({ navigation }) {
         <FilterBar filters={filters} onFilterChange={setFilters} />
       </View>
 
-      {/* Bottom sheet with activity list */}
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
-        backgroundStyle={styles.sheetBackground}
-        handleIndicatorStyle={styles.sheetHandle}
-      >
-        <ListHeader />
-        <BottomSheetFlatList
-          data={filteredActivities}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          ListEmptyComponent={ListEmpty}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      </BottomSheet>
+      {/* Custom draggable bottom sheet */}
+      <Animated.View style={[styles.sheet, { height: sheetHeight }]}>
+        {/* Drag handle */}
+        <View {...panResponder.panHandlers} style={styles.handleArea}>
+          <View style={styles.handle} />
+        </View>
+
+        {/* List header */}
+        <View style={styles.listHeader}>
+          <Text style={styles.listCount}>
+            {filteredActivities.length}{' '}
+            {filteredActivities.length === 1 ? 'activity' : 'activities'} nearby
+            {hasFilters ? ' (filtered)' : ''}
+          </Text>
+        </View>
+
+        {/* Activity list */}
+        {filteredActivities.length === 0 ? (
+          <EmptyState
+            icon="search-outline"
+            title="No activities found"
+            subtitle="Try adjusting your filters to see more results."
+            buttonLabel="Clear Filters"
+            onButtonPress={() =>
+              setFilters({
+                when: null,
+                categories: [],
+                age: null,
+                freeOnly: false,
+              })
+            }
+          />
+        ) : (
+          <FlatList
+            data={filteredActivities}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </Animated.View>
     </View>
   );
 }
@@ -234,17 +311,33 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
   },
-  sheetBackground: {
+  // Custom bottom sheet styles
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  sheetHandle: {
-    backgroundColor: colors.border,
+  handleArea: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  handle: {
     width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.border,
   },
   listHeader: {
     paddingHorizontal: 20,
-    paddingTop: 4,
     paddingBottom: 8,
   },
   listCount: {
@@ -253,6 +346,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   listContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
 });
