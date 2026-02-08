@@ -50,6 +50,7 @@ export default function ExploreScreen({ navigation }) {
 
   // Filter state
   const [filters, setFilters] = useState({
+    type: null,
     when: null,
     categories: [],
     age: null,
@@ -58,6 +59,7 @@ export default function ExploreScreen({ navigation }) {
 
   // Live event search state
   const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState('');
   const hasSearched = liveEvents.length > 0;
 
   // Bottom sheet animation value (represents the height of the sheet)
@@ -152,14 +154,22 @@ export default function ExploreScreen({ navigation }) {
   // Handle live event search
   const handleSearchEvents = useCallback(async () => {
     setIsSearching(true);
+    setSearchStatus('Searching local events and activities...');
     try {
+      // Brief delay so user sees the status
+      await new Promise((r) => setTimeout(r, 300));
+      setSearchStatus('Checking libraries, museums, and parks...');
       const results = await searchEvents({
         kids,
         radius: preferences.searchRadius,
       });
+      setSearchStatus(`Found ${results.length} activities!`);
       updateLiveEvents(results);
       snapTo(SNAP_HALF);
+      // Clear status after a moment
+      setTimeout(() => setSearchStatus(''), 2000);
     } catch (error) {
+      setSearchStatus('');
       Alert.alert(
         'Search Failed',
         error.message.includes('API key')
@@ -204,6 +214,7 @@ export default function ExploreScreen({ navigation }) {
   const keyExtractor = useCallback((item) => item.id, []);
 
   const hasFilters =
+    filters.type ||
     filters.when ||
     filters.categories.length > 0 ||
     filters.age !== null ||
@@ -267,7 +278,7 @@ export default function ExploreScreen({ navigation }) {
             {hasFilters ? ' (filtered)' : ''}
           </Text>
           <TouchableOpacity
-            style={styles.searchButton}
+            style={[styles.searchButton, isSearching && styles.searchButtonSearching]}
             onPress={handleSearchEvents}
             disabled={isSearching}
           >
@@ -276,13 +287,21 @@ export default function ExploreScreen({ navigation }) {
             ) : (
               <>
                 <Ionicons name="sparkles" size={16} color={colors.white} />
-                <Text style={styles.searchButtonText}>
-                  {hasSearched ? 'Refresh' : 'Find Events'}
-                </Text>
+                <Text style={styles.searchButtonText}>Find Things To Do</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Search status message */}
+        {searchStatus ? (
+          <View style={styles.statusBar}>
+            {isSearching && (
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
+            )}
+            <Text style={styles.statusText}>{searchStatus}</Text>
+          </View>
+        ) : null}
 
         {/* Activity list */}
         {filteredActivities.length === 0 ? (
@@ -293,6 +312,7 @@ export default function ExploreScreen({ navigation }) {
             buttonLabel="Clear Filters"
             onButtonPress={() =>
               setFilters({
+                type: null,
                 when: null,
                 categories: [],
                 age: null,
@@ -415,10 +435,25 @@ const styles = StyleSheet.create({
     minWidth: 110,
     justifyContent: 'center',
   },
+  searchButtonSearching: {
+    backgroundColor: colors.textSecondary,
+  },
   searchButtonText: {
     fontSize: 13,
     fontWeight: '600',
     color: colors.white,
+  },
+  statusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+  },
+  statusText: {
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '500',
   },
   list: {
     flex: 1,

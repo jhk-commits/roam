@@ -150,6 +150,18 @@ export function filterByFree(activities, freeOnly) {
 }
 
 /**
+ * Filter activities by type (event vs attraction).
+ *
+ * @param {Array} activities
+ * @param {string|null} activityType - "event", "attraction", or null for all
+ * @returns {Array}
+ */
+export function filterByType(activities, activityType) {
+  if (!activityType) return activities;
+  return activities.filter((activity) => activity.type === activityType);
+}
+
+/**
  * Apply all active filters to an array of activities.
  *
  * @param {Array} activities - Full list of activities
@@ -158,10 +170,12 @@ export function filterByFree(activities, freeOnly) {
  * @param {Array<string>} filters.categories - Active category keys
  * @param {number|null} filters.age - Age to filter by
  * @param {boolean} filters.freeOnly - Show only free activities
+ * @param {string|null} filters.type - "event", "attraction", or null
  * @returns {Array}
  */
 export function applyFilters(activities, filters) {
   let result = activities;
+  result = filterByType(result, filters.type);
   result = filterByWhen(result, filters.when);
   result = filterByCategory(result, filters.categories);
   result = filterByAge(result, filters.age);

@@ -75,36 +75,30 @@ export default function ActivityCard({ activity, distance, onPress }) {
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      {/* Thumbnail placeholder */}
-      <View style={[styles.thumbnail, { backgroundColor: activity.imageColor || '#E5E7EB' }]}>
-        <Ionicons
-          name={categoryConfig ? categoryConfig.icon : 'location'}
-          size={28}
-          color="rgba(255,255,255,0.8)"
-        />
-        {/* Bookmark heart */}
-        <TouchableOpacity
-          style={styles.bookmarkButton}
-          onPress={handleBookmarkPress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-            <Ionicons
-              name={bookmarked ? 'heart' : 'heart-outline'}
-              size={22}
-              color={bookmarked ? colors.bookmarkActive : colors.white}
-            />
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
+      {/* Color accent strip */}
+      <View style={[styles.accentStrip, { backgroundColor: activity.imageColor || '#E5E7EB' }]} />
 
       {/* Card content */}
       <View style={styles.content}>
         <View style={styles.topRow}>
           <CategoryBadge category={activity.category} />
-          {distance !== undefined && (
-            <Text style={styles.distance}>{formatDistance(distance)}</Text>
-          )}
+          <View style={styles.topRight}>
+            {distance !== undefined && (
+              <Text style={styles.distance}>{formatDistance(distance)}</Text>
+            )}
+            <TouchableOpacity
+              onPress={handleBookmarkPress}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                <Ionicons
+                  name={bookmarked ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={bookmarked ? colors.bookmarkActive : colors.border}
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.name} numberOfLines={1}>
@@ -158,15 +152,12 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
-  thumbnail: {
-    width: 100,
+  accentStrip: {
+    width: 6,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  bookmarkButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
   },
   content: {
     flex: 1,
@@ -177,6 +168,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6,
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   distance: {
     fontSize: 13,
